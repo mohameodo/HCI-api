@@ -9,19 +9,19 @@ const handleDuplicateFieldsDB = (err) => {
   const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
   console.log(value);
 
-  const message = `Trùng lặp dữ liệu: ${value}. Vui lòng dùng giá trị khác!`;
+  const message = `Duplicate data: ${value}. Please use a different value!`;
   return new AppError(message, 400);
 };
 
 const handleValidationErrorDB = (err) => {
   const errors = Object.values(err.errors).map((el) => el.message);
 
-  const message = `Dữ liệu không hợp lệ. ${errors.join(". ")}`;
+  const message = `Invalid data. ${errors.join(". ")}`;
   return new AppError(message, 400);
 };
 
 const handleJWTError = () =>
-  new AppError("Token không hợp lệ. Vui lòng đăng nhập lại!", 401);
+  new AppError("Invalid token. Please log in again!", 401);
 
 const handleATExpiredError = () => new AppError("TokenExpiredError", 401);
 const handleRTExpiredError = () => new AppError("Logged out", 401);
@@ -49,7 +49,7 @@ const sendErrorProd = (err, res) => {
     // 2) Send generic message
     res.status(500).json({
       status: "error",
-      message: "Có gì đó không ổn!",
+      message: "Something went wrong!",
     });
   }
 };

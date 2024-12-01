@@ -18,7 +18,7 @@ exports.createSubscriber = catchAsync(async (req, res, next) => {
     (item) => item.id === myChannel.id
   );
   if (index !== -1)
-    return next(new AppError("Bạn đã đăng ký kênh này rồi", 404));
+    return next(new AppError("You have already subscribed to this channel", 404));
   await Subscriber.create({
     channel: req.body.channel,
     subscriber: req.channel.id,
@@ -48,7 +48,7 @@ exports.deleteSubscriber = catchAsync(async (req, res, next) => {
     (item) => item.id !== myChannel.id
   );
   if (channel.subscribers.length === newSub.length)
-    return next(new AppError("Bạn chưa đăng ký kênh này", 404));
+    return next(new AppError("You have not subscribed to this channel", 404));
   await Subscriber.findOneAndDelete({
     channel: req.body.channel,
     subscriber: req.channel.id,

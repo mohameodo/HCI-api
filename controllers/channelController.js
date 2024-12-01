@@ -26,7 +26,7 @@ exports.getMe = (req, res, next) => {
 exports.updateMe = catchAsync(async (req, res, next) => {
   // 1) Create error if Channel POSTs password data
   if (req.body.password || req.body.passwordConfirm) {
-    return next(new AppError("Trang này không dùng để thay đổi mật khẩu", 400));
+    return next(new AppError("This page is not for password changes", 400));
   }
 
   // 2) Filtered out unwanted fields names that are not allowed to be updated,this is all field can update:

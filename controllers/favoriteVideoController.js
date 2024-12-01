@@ -33,7 +33,7 @@ exports.createFavoriteVideo = catchAsync(async (req, res, next) => {
 
   const doc = await FavoriteVideo.findOneAndUpdate(filter, {}, options);
   if (doc) {
-    return next(new AppError("Bạn đã thêm video vào yêu thích rồi", 404));
+    return next(new AppError("You have already added this video to favorites", 404));
   }
 
   const newFavo = channel.favoriteVideos.push(req.body.video);
@@ -58,7 +58,7 @@ exports.deleteFavoriteVideo = catchAsync(async (req, res, next) => {
 
   if (!doc) {
     return next(
-      new AppError("Bạn chưa thêm video này vào danh sách yêu thích", 404)
+      new AppError("You have not added this video to favorites", 404)
     );
   }
   const newFavo = await channel.favoriteVideos.filter(

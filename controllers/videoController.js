@@ -220,7 +220,7 @@ exports.actionVideo = catchAsync(async (req, res, next) => {
   await data.save({ validateBeforeSave: false });
 
   res.status(200).json({
-    message: "Cập nhật thành công",
+    message: "Update successful",
     doc: data,
   });
 });
@@ -234,7 +234,7 @@ async function getVideosByDateRange(channels, startDate, endDate) {
 exports.videoFollowings = catchAsync(async (req, res, next) => {
   const followings = req.channel.followings;
   if (followings.length === 0)
-    next(new AppError("Bạn chưa đăng ký kênh nào", 404));
+    next(new AppError("You have not subscribed to any channels", 404));
   // const todayStart = moment().startOf("day").toDate();
   // const todayEnd = moment().endOf("day").toDate();
 

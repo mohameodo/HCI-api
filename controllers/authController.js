@@ -107,7 +107,7 @@ exports.sendMailVerify = catchAsync(async (req, res, next) => {
 
   // 2) Send it to channel's email
   const verifyURL = `${req.protocol}://${req.get("host")}/verify`;
-  const message = `Bạn là chủ tài khoản? Vui lòng xác nhận tài khoản tại:  ${verifyURL}.\nMã xác nhận: ${verifyToken}\n.Nếu không phải, vui lòng bỏ qua mail này!`;
+  const message = `Are you the account owner? Please confirm your account at:  ${verifyURL}.\nVerification code: ${verifyToken}\n.If not, please ignore this email!`;
   channel.password = undefined;
   console.log(verifyToken);
   try {
@@ -133,7 +133,7 @@ const sendVerifyToken = async (channel, statusCode, res, req) => {
   await channel.save({ validateBeforeSave: false });
   // 2) Send it to channel's email
   const verifyURL = `${req.protocol}://${req.get("host")}/verify`;
-  const message = `Bạn là chủ tài khoản? Vui lòng xác nhận tài khoản tại:  ${verifyURL}.\nMã xác nhận: ${verifyToken}\n.Nếu không phải, vui lòng bỏ qua mail này!`;
+  const message = `Are you the account owner? Please confirm your account at:  ${verifyURL}.\nVerification code: ${verifyToken}\n.If not, please ignore this email!`;
   channel.password = undefined;
   console.log(verifyToken);
   try {
@@ -164,7 +164,7 @@ exports.verifyChannel = catchAsync(async (req, res, next) => {
   });
 
   if (!channel) {
-    return next(new AppError("Mã xác nhận không hợp lệ hoặc đã hết hạn", 422));
+    return next(new AppError("Invalid or expired verification code", 422));
   }
   channel.active = "active";
   channel.channelVerifyToken = undefined;
@@ -176,7 +176,7 @@ exports.verifyChannel = catchAsync(async (req, res, next) => {
 exports.signup = catchAsync(async (req, res, next) => {
   const channelExist = await Channel.findOne({ email: req.body.email });
   if (channelExist) {
-    return next(new AppError("Email này đã được đăng ký.", 422));
+    return next(new AppError("This email is already registered.", 422));
   }
   const newChannel = await Channel.create({
     fullName: req.body.fullName,
@@ -192,7 +192,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // 1) Check if email and password exist
   if (!email || !password) {
-    return next(new AppError("Vui lòng cung cấp email và mật khẩu!", 422));
+    return next(new AppError("Please provide email and password!", 422));
   }
   // 2) Check if channel exists && password is correct
   const channel = await Channel.findOne({ email })
@@ -203,13 +203,13 @@ exports.login = catchAsync(async (req, res, next) => {
     !channel ||
     !(await channel.correctPassword(password.toString(), channel.password))
   ) {
-    return next(new AppError("Email hoặc mật khẩu không chính xác", 422));
+    return next(new AppError("Incorrect email or password", 422));
   }
   // 3) Check if channel not verify, send code to gmail
   if (channel.active === "verify") {
     sendVerifyToken(channel, 201, res, req);
   } else if (channel.active === "ban")
-    return next(new AppError("Tài khoản đã bị khóa", 403));
+    return next(new AppError("Account has been locked", 403));
   // 4) If everything ok, send token to client
   else {
     createSendToken(channel, 200, res);
@@ -226,7 +226,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   } catch (error) {
     return next(
       new AppError(
-        "Bạn chưa đăng nhập hoặc đăng ký. Vui lòng thực hiện!!!",
+        "You are not logged in or registered. Please proceed!!!",
         401
       )
     );
@@ -242,14 +242,14 @@ exports.protect = catchAsync(async (req, res, next) => {
     .populate("subscribers")
     .populate("followings");
   if (!currentChannel) {
-    return next(new AppError("Token người dùng không còn tồn tại.", 401));
+    return next(new AppError("User token no longer exists.", 401));
   }
   if (currentChannel.active === "ban") {
     res.cookie("jwt", "loggedout", {
       expires: new Date(Date.now() + 10 * 1000),
       httpOnly: true,
     });
-    return next(new AppError("Tài khoản của bạn đang bị khóa", 403));
+    return next(new AppError("Your account is locked", 403));
   }
 
   // 4) Check if channel changed password after the token was issued
@@ -257,7 +257,7 @@ exports.protect = catchAsync(async (req, res, next) => {
     console.log(decoded);
     return next(
       new AppError(
-        "Tài khoản gần đây đã thay đổi mật khẩu! Xin vui lòng đăng nhập lại.",
+        "The account recently changed the password! Please log in again.",
         401
       )
     );
@@ -295,7 +295,7 @@ exports.isLoggedIn = async (req, res, next) => {
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!req.channel || !roles.includes(req.channel.role)) {
-      return next(new AppError("Bạn không có quyền thực hiện", 403));
+      return next(new AppError("You do not have permission to perform this action", 403));
     }
     next();
   };
@@ -309,13 +309,13 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   if (!channel) {
     return next(
       new AppError(
-        "Tài khoản này không tồn tại. Vui lòng đăng ký để sử dụng",
+        "This account does not exist. Please register to use",
         404
       )
     );
   }
   if (channel.active === "ban") {
-    return next(new AppError("Tài khoản này đã bị khóa", 404));
+    return next(new AppError("This account has been locked", 404));
   }
 
   // 2) Generate the random reset token
@@ -325,7 +325,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 3) Send it to channel's email
   const resetURL = `${req.protocol}://${req.get("host")}/verify-reset-password`;
 
-  const message = `Bạn quên mật khẩu? Mã xác nhận của bạn: ${resetToken}.\nĐổi mật khẩu mới tại : ${resetURL}.\nNếu không phải bạn, vui lòng bỏ qua email này!`;
+  const message = `Forgot your password? Your verification code: ${resetToken}.\nChange your password at : ${resetURL}.\nIf not you, please ignore this email!`;
 
   try {
     await sendEmail({
@@ -345,7 +345,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     await channel.save({ validateBeforeSave: false });
 
     return next(
-      new AppError("Đã có lỗi xảy ra. Vui lòng thực hiện lại sau!"),
+      new AppError("An error occurred. Please try again later!"),
       500
     );
   }
@@ -362,7 +362,7 @@ exports.verifyResetPass = catchAsync(async (req, res, next) => {
   });
   // 2) If token has not expired, and there is channel, set the new password
   if (!channel) {
-    return next(new AppError("Mã xác nhận không hợp lệ hoặc đã hết hạn", 400));
+    return next(new AppError("Invalid or expired verification code", 400));
   }
   res.status(200).json({
     status: "success",
@@ -380,7 +380,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     .populate("followings");
   // 2) If token has not expired, and there is channel, set the new password
   if (!channel) {
-    return next(new AppError("Mã xác nhận không hợp lệ hoặc đã hết hạn", 400));
+    return next(new AppError("Invalid or expired verification code", 400));
   }
   channel.password = req.body.password;
   channel.passwordConfirm = req.body.passwordConfirm;
@@ -403,7 +403,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   if (
     !(await channel.correctPassword(req.body.passwordCurrent, channel.password))
   ) {
-    return next(new AppError("Mật khẩu hiện tại chưa chính xác.", 401));
+    return next(new AppError("Current password is incorrect.", 401));
   }
 
   // 3) If so, update password
@@ -450,7 +450,7 @@ exports.googleLogin = catchAsync(async (req, res) => {
   // 3) If channel does not exist, create one
   else {
     if (data.active === "ban")
-      return next(new AppError("Tài khoản của bạn đã bị ban.", 401));
+      return next(new AppError("Your account has been banned.", 401));
     if (data.active === "verify") {
       data.active = "active";
       await data.save({ validateBeforeSave: false });

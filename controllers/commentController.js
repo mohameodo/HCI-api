@@ -74,7 +74,7 @@ exports.actionComment = catchAsync(async (req, res, next) => {
   await data.save({ validateBeforeSave: false });
 
   res.status(200).json({
-    message: "Cập nhật thành công",
+    message: "Update successful",
     doc: data,
   });
 });
